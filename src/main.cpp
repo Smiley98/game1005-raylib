@@ -3,7 +3,6 @@
 #include <array>
 #include <vector>
 #include <queue>
-#include <algorithm>
 
 constexpr float SCREEN_WIDTH = 960.0f;                  // GBA_W * 4
 constexpr float SCREEN_HEIGHT = 640.0f;                 // GBA_H * 4
@@ -19,6 +18,8 @@ struct Cell
     int row;
     int col;
 };
+
+constexpr std::array<Cell, 4> DIRECTIONS{ Cell{ -1, 0 }, Cell{ 1, 0}, Cell{ 0, -1 }, Cell{ 0, 1 } };
 
 using Tiles = std::array<std::array<int, COL_COUNT>, ROW_COUNT>;
 using Visited = std::array<std::array<bool, COL_COUNT>, ROW_COUNT>;
@@ -86,30 +87,50 @@ inline void DrawTilesLines(const Tiles& tiles)
     }
 }
 
-inline std::vector<Cell> Neighbours(Cell cell, const Tiles& tiles)
+inline bool InBounds(Cell cell, int rows = ROW_COUNT, int cols = COL_COUNT)
 {
-    std::vector<Cell> neighbours;
-    if (cell.col - 1 >= 0) neighbours.push_back({ cell.row, cell.col - 1 });
-    if (cell.col + 1 < COL_COUNT) neighbours.push_back({ cell.row, cell.col + 1 });
-    if (cell.row - 1 >= 0) neighbours.push_back({ cell.row - 1, cell.col });
-    if (cell.row + 1 < ROW_COUNT) neighbours.push_back({ cell.row + 1, cell.col });
-    return neighbours;
+    return cell.col - 1 >= 0 && cell.col + 1 < cols && cell.row - 1 >= 0 && cell.row + 1 < rows;
+}
+
+inline bool IsExtent(Cell cell, int rows = ROW_COUNT, int cols = COL_COUNT)
+{
+    return cell.col == 0 || cell.col == cols - 1 || cell.row == 0 || cell.row == rows - 1;
+}
+
+inline bool IsEdge(Cell cell, const Tiles& tiles)
+{
+    if (IsExtent(cell))
+        return true;
+
+    for (Cell dir : DIRECTIONS)
+    {
+        Cell adj = { cell.row + dir.row, cell.col + dir.col };
+        if (InBounds(adj) && tiles[adj.row][adj.col] == 0)
+            return true;
+    }
+
+    return false;
 }
 
 inline std::vector<Cell> GenIsland(Cell start, const Tiles& tiles, Visited& visited)
 {
-    std::vector<Cell> cells;
+    std::vector<Cell> island;
+
     std::queue<Cell> frontier;
     frontier.push(start);
     visited[start.row][start.col] = true;
+
     while (!frontier.empty())
     {
         Cell cell = frontier.front();
         frontier.pop();
-        cells.push_back(cell);
+        island.push_back(cell);
 
-        for (Cell adj : Neighbours(cell, tiles))
+        for (Cell dir : DIRECTIONS)
         {
+            Cell adj = { cell.row + dir.row, cell.col + dir.col };
+            if (!InBounds(adj)) continue;
+
             bool canVist = !visited[adj.row][adj.col];
             bool canCollide = tiles[adj.row][adj.col] > 0;
             if (canVist && canCollide)
@@ -120,21 +141,27 @@ inline std::vector<Cell> GenIsland(Cell start, const Tiles& tiles, Visited& visi
         }
     }
 
-    return cells;
-}
-
-std::vector<Cell> SortMin(std::vector<Cell> island)
-{
-    std::sort(island.begin(), island.end(), [](Cell a, Cell b) {
-        return a.col < b.col;
-        });
     return island;
 }
 
-inline std::vector<Vector2> GenIslandOutline(const std::vector<Cell>& island)
+inline std::vector<Cell> GenEdges(const std::vector<Cell>& island, const Tiles& tiles)
 {
-    std::vector<Vector2> outline;
-    return outline;
+    std::vector<Cell> edges;
+    for (Cell cell : island)
+    {
+        if (IsEdge(cell, tiles))
+            edges.push_back(cell);
+    }
+    return edges;
+}
+
+// 1. An edge can contain min 1 line max 4 lines. Compare adjacent tile values to figure out how many lines per edge.
+// 2. Order the lines to connect to each other.
+// 3. Check if adjacent lines have the same slope. If so, they must be unified into a single line.
+inline std::vector<Vector2> GenOutline(const std::vector<Cell>& edges, const Tiles& tiles)
+{
+    std::vector<Vector2> lines;
+    return lines;
 }
 
 inline void AddIsland(Cell cell, std::vector<std::vector<Cell>>& islands,
@@ -152,27 +179,27 @@ inline void AddIsland(Cell cell, std::vector<std::vector<Cell>>& islands,
 int main()
 {
     std::array<std::array<int, COL_COUNT>, ROW_COUNT> tiles =
-    {
-        std::array<int, COL_COUNT> { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
-        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
-        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
-        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
-        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
-        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1 },
-        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1 },
-        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1 },
-        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-        std::array<int, COL_COUNT> { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }
+    {                              //0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 19
+        std::array<int, COL_COUNT> { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },// 0
+        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },// 1
+        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },// 2
+        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },// 3
+        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1 },// 4
+        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1 },// 5
+        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1 },// 6
+        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1 },// 7
+        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },// 8
+        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },// 9
+        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },// 10
+        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },// 11
+        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },// 12
+        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },// 13
+        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1 },// 14
+        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1 },// 15
+        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1 },// 16
+        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },// 17
+        std::array<int, COL_COUNT> { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },// 18
+        std::array<int, COL_COUNT> { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 } // 19
     };
 
     std::array<std::array<bool, COL_COUNT>, ROW_COUNT> visited = { false };
@@ -184,10 +211,9 @@ int main()
         }
     }
 
-    // row 8 col 7 is the bottom-left clel of the test island.
-    std::vector<Cell> testIsland = GenIsland({ 8, 7 }, tiles, visited);
-    //testIsland = SortMin(testIsland);
-    std::vector<Vector2> testOutline = GenIslandOutline(testIsland);
+    std::vector<Cell> testIsland = GenIsland({ 7, 6 }, tiles, visited);
+    std::vector<Cell> testEdges = GenEdges(testIsland, tiles);
+    std::vector<Vector2> testOutline = GenOutline(testEdges, tiles);
 
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Path Exit");
     SetTargetFPS(60);
@@ -203,6 +229,9 @@ int main()
         for (Cell cell : testIsland)
             DrawTile(cell.row, cell.col, RED);
 
+        for (Cell cell : testEdges)
+            DrawTile(cell.row, cell.col, GREEN);
+
         for (size_t i = 0; i < testOutline.size(); i++)
         {
             Vector2 curr = testOutline[i];
@@ -216,14 +245,3 @@ int main()
     CloseWindow();
     return 0;
 }
-
-// Deprecated. Switching from rectangles to line segments.
-//inline Rectangle GenRowRec(int row, int colMin, int colMax)
-//{
-//    Rectangle rec;
-//    rec.x = colMin * TILE_SIZE;
-//    rec.y = row * TILE_SIZE;
-//    rec.width = (1 + (colMax - colMin)) * TILE_SIZE;
-//    rec.height = TILE_SIZE;
-//    return rec;
-//}
