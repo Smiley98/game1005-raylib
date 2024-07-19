@@ -14,7 +14,14 @@
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Cell.h" />
+    <ClInclude Include="src\Constants.h" />
+    <ClInclude Include="src\Drawing.h" />
+    <ClInclude Include="src\Generation.h" />
+    <ClInclude Include="src\Line.h" />
     <ClInclude Include="src\Math.h" />
+    <ClInclude Include="src\Physics.h" />
+    <ClInclude Include="src\Tile.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

@@ -1,325 +1,38 @@
 #include <raylib.h>
 #include "Math.h"
-
-#include <cassert>
-#include <algorithm>
-
-#include <array>
-#include <vector>
-
-#include <unordered_set>
-#include <queue>
-
-constexpr float SCREEN_WIDTH = 960.0f;
-constexpr float SCREEN_HEIGHT = 640.0f;
-
-constexpr float ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT;
-constexpr float TILE_SIZE = 32.0f;
-
-constexpr int ROW_COUNT = SCREEN_HEIGHT / TILE_SIZE;
-constexpr int COL_COUNT = SCREEN_WIDTH / TILE_SIZE;
-
-struct Cell
-{
-    int row;
-    int col;
-
-    bool operator==(Cell cell) const
-    {
-        return row == cell.row && col == cell.col;
-    }
-};
-
-struct CellHash
-{
-    size_t operator()(Cell cell) const
-    {
-        int rowHash = std::hash<int>()(cell.row);
-        int colHash = std::hash<int>()(cell.col) << 1;
-        return rowHash ^ colHash;
-    }
-};
-
-constexpr std::array<Cell, 4> DIRECTIONS{ Cell{ -1, 0 }, Cell{ 1, 0}, Cell{ 0, -1 }, Cell{ 0, 1 } };
-using Tiles = std::array<std::array<int, COL_COUNT>, ROW_COUNT>;
-
-inline Rectangle TileRec(int row, int col)
-{
-    Rectangle rec;
-    rec.x = col * TILE_SIZE;
-    rec.y = row * TILE_SIZE;
-    rec.width = TILE_SIZE;
-    rec.height = TILE_SIZE;
-    return rec;
-}
-
-inline void DrawTile(int row, int col, Color color)
-{
-    Rectangle rec = TileRec(row, col);
-    DrawRectangleRec(rec, color);
-}
-
-inline void DrawTileLines(int row, int col, Color color)
-{
-    Rectangle rec = TileRec(row, col);
-    DrawRectangleLinesEx(rec, 2.0f, color);
-}
-
-inline void DrawTiles(const Tiles& tiles)
-{
-    for (int row = 0; row < ROW_COUNT; row++)
-    {
-        for (int col = 0; col < COL_COUNT; col++)
-        {
-            const int type = tiles[row][col];
-            switch (type)
-            {
-            case 0:
-                DrawTile(row, col, BLACK);
-                break;
-
-            case 1:
-                DrawTile(row, col, GRAY);
-                break;
-            }
-        }
-    }
-}
-
-inline void DrawTilesLines(const Tiles& tiles)
-{
-    for (int row = 0; row < ROW_COUNT; row++)
-    {
-        for (int col = 0; col < COL_COUNT; col++)
-        {
-            const int type = tiles[row][col];
-            switch (type)
-            {
-            case 0:
-                break;
-
-            case 1:
-                DrawTileLines(row, col, LIGHTGRAY);
-                break;
-            }
-        }
-    }
-}
-
-inline bool InBounds(Cell cell, int rows = ROW_COUNT, int cols = COL_COUNT)
-{
-    return cell.col >= 0 && cell.col < cols && cell.row >= 0 && cell.row < rows;
-}
-
-inline bool IsExtent(Cell cell, int rows = ROW_COUNT, int cols = COL_COUNT)
-{
-    return cell.col == 0 || cell.col == cols - 1 || cell.row == 0 || cell.row == rows - 1;
-}
-
-inline bool IsEdge(Cell cell, const Tiles& tiles)
-{
-    if (IsExtent(cell))
-        return true;
-
-    for (Cell dir : DIRECTIONS)
-    {
-        Cell adj = { cell.row + dir.row, cell.col + dir.col };
-        if (InBounds(adj) && tiles[adj.row][adj.col] == 0)
-            return true;
-    }
-
-    return false;
-}
-
-inline std::vector<Cell> GenIsland(Cell start, const Tiles& tiles)
-{
-    assert(tiles[start.row][start.col] > 0);
-    std::vector<Cell> island;
-
-    std::unordered_set<Cell, CellHash> closed;
-    std::queue<Cell> open;
-    open.push(start);
-
-    while (!open.empty())
-    {
-        Cell cell = open.front();
-        open.pop();
-
-        if (closed.find(cell) != closed.end())
-            continue;
-
-        closed.insert(cell);
-        island.push_back(cell);
-
-        for (Cell dir : DIRECTIONS)
-        {
-            Cell adj = { cell.row + dir.row, cell.col + dir.col };
-            bool add = InBounds(adj) && tiles[adj.row][adj.col] > 0;
-            if (add)
-                open.push(adj);
-        }
-    }
-
-    return island;
-}
-
-inline std::vector<Cell> GenEdges(const std::vector<Cell>& island, const Tiles& tiles)
-{
-    std::vector<Cell> edges;
-    for (Cell cell : island)
-    {
-        if (IsEdge(cell, tiles))
-            edges.push_back(cell);
-    }
-    return edges;
-}
-
-struct Line
-{
-    Vector2 start;
-    Vector2 end;
-};
-
-bool IsHorizontal(Line line)
-{
-    return Equals(line.start.y, line.end.y);
-}
-
-bool IsVertical(Line line)
-{
-    return Equals(line.start.x, line.end.x);
-}
-
-bool CanMerge(Line a, Line b)
-{
-    // If horizontal and same row
-    if (IsHorizontal(a) && IsHorizontal(b) && Equals(a.start.y, b.start.y))
-        return Equals(a.end.x, b.start.x) || Equals(a.start.x, b.end.x);
-
-    // If vertical and same column
-    if (IsVertical(a) && IsVertical(b) && Equals(a.start.x, b.start.x))
-        return Equals(a.end.y, b.start.y) || Equals(a.start.y, b.end.y);
-
-    return false;
-}
-
-Line Merge(Line a, Line b)
-{
-    assert((IsHorizontal(a) && IsHorizontal(b)) || (IsVertical(a) && IsVertical(b)));
-    Line merged{};
-    if (IsHorizontal(a))
-    {
-        merged.start.x = fminf(a.start.x, b.start.x);
-        merged.end.x = fmaxf(a.end.x, b.end.x);
-
-        merged.start.y = a.start.y;
-        merged.end.y = a.end.y;
-    }
-    else if (IsVertical(a))
-    {
-        merged.start.y = fminf(a.start.y, b.start.y);
-        merged.end.y = fmaxf(a.end.y, b.end.y);
-
-        merged.start.x = a.start.x;
-        merged.end.x = a.end.x;
-    }
-    return merged;
-}
-
-Line Left(Cell cell)
-{
-    // Top to bottom
-    Line line;
-    line.start.x = line.end.x = cell.col * TILE_SIZE;
-    line.start.y = cell.row * TILE_SIZE;
-    line.end.y = (cell.row + 1) * TILE_SIZE;
-    return line;
-}
-
-Line Right(Cell cell)
-{
-    // Top to bottom
-    Line line;
-    line.start.x = line.end.x = (cell.col + 1) * TILE_SIZE;
-    line.start.y = cell.row * TILE_SIZE;
-    line.end.y = (cell.row + 1) * TILE_SIZE;
-    return line;
-}
-
-Line Top(Cell cell)
-{
-    // Left to right
-    Line line;
-    line.start.y = line.end.y = cell.row * TILE_SIZE;
-    line.start.x = cell.col * TILE_SIZE;
-    line.end.x = (cell.col + 1) * TILE_SIZE;
-    return line;
-}
-
-Line Bottom(Cell cell)
-{
-    // Left to right
-    Line line;
-    line.start.y = line.end.y = (cell.row + 1) * TILE_SIZE;
-    line.start.x = cell.col * TILE_SIZE;
-    line.end.x = (cell.col + 1) * TILE_SIZE;
-    return line;
-}
-
-inline std::vector<Line> GenOutline(const std::vector<Cell>& edges, const Tiles& tiles)
-{
-    std::vector<Line> lines;
-    for (Cell cell : edges)
-    {
-        // Special cases for edges of grid:
-        if (IsExtent(cell))
-        {
-            if (cell.row == 0) lines.push_back(Top(cell));
-            if (cell.col == 0) lines.push_back(Left(cell));
-            if (cell.row == ROW_COUNT - 1) lines.push_back(Bottom(cell));
-            if (cell.col == COL_COUNT - 1) lines.push_back(Right(cell));
-            // Doesn't generate inner-lines, might need to modify to do so.
-        }
-        else
-        {
-            Cell left = { cell.row, cell.col - 1 };
-            Cell right = { cell.row, cell.col + 1 };
-            Cell top = { cell.row - 1, cell.col };
-            Cell bottom = { cell.row + 1, cell.col };
-            if (InBounds(left) && tiles[left.row][left.col] == 0) lines.push_back(Left(cell));
-            if (InBounds(right) && tiles[right.row][right.col] == 0) lines.push_back(Right(cell));
-            if (InBounds(top) && tiles[top.row][top.col] == 0) lines.push_back(Top(cell));
-            if (InBounds(bottom) && tiles[bottom.row][bottom.col] == 0) lines.push_back(Bottom(cell));
-        }
-    }
-
-    std::vector<Line> optimizedLines;
-    while (!lines.empty())
-    {
-        Line curr = lines.back();
-        lines.pop_back();
-
-        auto condition = [&curr](Line line) { return CanMerge(curr, line); };
-        auto it = std::find_if(lines.begin(), lines.end(), condition);
-        while (it != lines.end())
-        {
-            curr = Merge(curr, *it);
-            lines.erase(it);
-            it = std::find_if(lines.begin(), lines.end(), condition);
-        }
-
-        optimizedLines.push_back(curr);
-    }
-    return optimizedLines;
-}
+#include "Generation.h"
+#include "Physics.h"
 
 struct Scene
 {
     std::vector<std::vector<Cell>> islands;
     std::vector<std::vector<Cell>> edges;
-    std::vector<std::vector<Vector2>> outlines;
+    std::vector<std::vector<Line>> lines;
 };
 
+struct Player
+{
+    Vector2 pos{};
+    Rigidbody rb{};
+    
+    const float dragX = 0.05f;
+    const float maxVelX = 500.0f;
+
+    const float defaultGravityScale = 2.0f;
+    float gravityScale = defaultGravityScale;
+
+    const int jumpCountMax = 2;
+    int jumpCount = jumpCountMax;
+
+    const float colliderRadius = 15.0f;
+    const float groundColliderRadius = 2.5f;
+    bool grounded = false;
+
+    bool collisionPrev = false;
+    bool collisionCurr = false;
+};
+
+bool CheckCollisionLevel(Vector2 position, float radius, const Scene& scene, std::vector<Vector2>* mtvs = nullptr);
 void GenScene(Scene& scene, const Tiles& tiles);
 void DrawScene(const Scene& scene);
 
@@ -349,39 +62,122 @@ int main()
         std::array<int, COL_COUNT> { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 } // 19
     };
 
-    //Scene scene;
-    //GenScene(scene, tiles);
+    Scene scene;
+    GenScene(scene, tiles);
 
-    std::vector<Cell> testIsland = GenIsland({ 7, 6 }, tiles);
-    std::vector<Cell> testEdges = GenEdges(testIsland, tiles);
-    std::vector<Line> testOutline = GenOutline(testEdges, tiles);
+    Player player;
+    player.pos = { SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.75f };
 
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Path Exit");
     SetTargetFPS(60);
 
     while (!WindowShouldClose())
     {
+        float dt = GetFrameTime();
+        if (IsKeyDown(KEY_A))
+        {
+            player.rb.acc.x = -1000.0f;
+        }
+        else if (IsKeyDown(KEY_D))
+        {
+            player.rb.acc.x = 1000.0f;
+        }
+        else
+        {
+            player.rb.acc.x = 0.0f;
+        }
+        if (IsKeyPressed(KEY_W) && player.jumpCount > 0)
+        {
+            player.jumpCount--;
+            player.rb.vel.y = -250.0f;
+            player.grounded = false;
+        }
+
+        player.gravityScale = player.grounded ? 0.0f : player.defaultGravityScale;
+        player.rb.acc.y = GRAVITY.y * player.gravityScale;
+        player.rb.vel = Integrate(player.rb.vel, player.rb.acc, dt);
+        player.rb.vel.x *= powf(player.dragX, dt);
+        player.rb.vel.x = Clamp(player.rb.vel.x, -player.maxVelX, player.maxVelX);
+        player.pos = Integrate(player.pos, player.rb.vel, dt);
+
+        Vector2 groundCollider = player.pos + V2_DOWN * (player.colliderRadius - player.groundColliderRadius);
+        player.grounded = CheckCollisionLevel(groundCollider, player.groundColliderRadius, scene);
+
+        std::vector<Vector2> mtvs;
+        player.collisionCurr = CheckCollisionLevel(player.pos, player.colliderRadius, scene, &mtvs);
+
+        for (Vector2 mtv : mtvs)
+        {
+            // "On collision enter"
+            if (!player.collisionPrev && player.collisionCurr)
+            {
+                Vector2 normal = Normalize(mtv);
+                const float mag = 0.9f;
+
+                // Vertical collision
+                if (fabsf(normal.y) >= mag)
+                    player.rb.vel.y = 0.0f;
+                
+                // Horizontal collision
+                if (fabsf(normal.x) >= mag)
+                    player.rb.vel.x = 0.0f;
+            }
+
+            // "On collision stay"
+            player.pos = player.pos + mtv;
+        }
+
+        // Note that this won't fire if player travels an extremely short distance because it goes from
+        // previously colliding with the ground to colliding with the ceiling in 1 frame
+        // (!true && true) --> no "on collision enter"!
+        // Solve by storing object ids (including null id for no collision) and comparing if prevId == currId
+        player.collisionPrev = player.collisionCurr;
+        player.jumpCount = player.grounded ? player.jumpCountMax : player.jumpCount;
+
         BeginDrawing();
         ClearBackground(RAYWHITE);
-
+        
         DrawTiles(tiles);
         DrawTilesLines(tiles);
-        //DrawScene(scene);
-
-        for (Cell cell : testIsland)
-            DrawTile(cell.row, cell.col, GREEN);
-
-        for (Cell cell : testEdges)
-            DrawTile(cell.row, cell.col, RED);
-
-        for (Line line : testOutline)
-            DrawLineEx(line.start, line.end, 5.0f, SKYBLUE);
+        DrawScene(scene);
+        DrawCircleV(player.pos, player.colliderRadius, LIGHTGRAY);
+        DrawFPS(10, 10);
 
         EndDrawing();
     }
 
     CloseWindow();
     return 0;
+}
+
+bool CheckCollisionLevel(Vector2 position, float radius, const Scene& scene, std::vector<Vector2>* mtvs)
+{
+    if (mtvs == nullptr)
+    {
+        for (const std::vector<Line>& lines : scene.lines)
+        {
+            for (const Line& line : lines)
+            {
+                if (LineCircle(line.start, line.end, position, radius))
+                    return true;
+            }
+        }
+        return false;
+    }
+    else
+    {
+        mtvs->reserve(4);
+        for (const std::vector<Line>& lines : scene.lines)
+        {
+            for (const Line& line : lines)
+            {
+                Vector2 mtv{};
+                if (LineCircle(line.start, line.end, position, radius, &mtv))
+                    mtvs->push_back(mtv);
+            }
+        }
+        return !mtvs->empty();
+    }
 }
 
 void GenScene(Scene& scene, const Tiles& tiles)
@@ -420,14 +216,14 @@ void GenScene(Scene& scene, const Tiles& tiles)
     for (const std::vector<Cell>& island : islands)
         edges.push_back(GenEdges(island, tiles));
 
-    // Generate outlines
-    std::vector<std::vector<Vector2>> outlines;
-    //for (const std::vector<Cell>& edge : edges)
-    //    outlines.push_back(GenOutline(edge, tiles));
+    // Generate lines
+    std::vector<std::vector<Line>> lines;
+    for (const std::vector<Cell>& edge : edges)
+        lines.push_back(GenOutline(edge, tiles));
 
     scene.islands = islands;
     scene.edges = edges;
-    scene.outlines = outlines;
+    scene.lines = lines;
 }
 
 void DrawScene(const Scene& scene)
@@ -438,9 +234,15 @@ void DrawScene(const Scene& scene)
             DrawTile(cell.row, cell.col, GREEN);
     }
 
-    for (const std::vector<Cell>& edge : scene.edges)
+    for (const std::vector<Cell>& edges : scene.edges)
     {
-        for (Cell cell : edge)
+        for (Cell cell : edges)
             DrawTile(cell.row, cell.col, RED);
+    }
+
+    for (const std::vector<Line>& lines : scene.lines)
+    {
+        for (Line line : lines)
+            DrawLineEx(line.start, line.end, 2.0f, SKYBLUE);
     }
 }
