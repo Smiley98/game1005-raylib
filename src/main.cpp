@@ -6,15 +6,15 @@ int main()
     InitWindow(800, 800, "Game");
     SetTargetFPS(60);
 
-    // Horizontal start at 25% of the screen width
-    float x = GetScreenWidth() * 0.25f;
-
-    // Vertical position of 50% of the screen height
-    float y = GetScreenHeight() * 0.5f;
+    // Position of our circle
+    Vector2 position;
+    position.x = GetScreenWidth() * 0.25f;
+    position.y = GetScreenHeight() * 0.5f;
 
     // Move at 100 pixels per second
     float speed = 100.0f;
 
+    // Time-based movement if false, mouse-based movement if true
     bool useMouse = false;
 
     while (!WindowShouldClose())
@@ -27,28 +27,28 @@ int main()
             // Reset position if we switch back to time-based animation
             if (!useMouse)
             {
-                x = GetScreenWidth() * 0.25f;
-                y = GetScreenHeight() * 0.5f;
+                position.x = GetScreenWidth() * 0.25f;
+                position.y = GetScreenHeight() * 0.5f;
             }
         }
 
         // Move using mouse position if we're moving based on mouse-input
         if (useMouse)
         {
-            Vector2 mouse = GetMousePosition();
-            x = mouse.x;
-            y = mouse.y;
+            position = GetMousePosition();
         }
         else
         {
             // Move using time-based animation otherwise!
             float dt = GetFrameTime();
-            x += speed * dt;
+            position.x += speed * dt;
         }
 
+        // Optional homework: use vector math to move the circle in different directions!
+        // The Normalize and Rotate functions may be of use!!
         BeginDrawing();
         ClearBackground(RAYWHITE);
-        DrawCircle(x, y, 25.0f, RED);
+        DrawCircleV(position, 25.0f, RED);
         EndDrawing();
     }
 
