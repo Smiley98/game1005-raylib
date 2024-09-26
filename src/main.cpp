@@ -5,11 +5,18 @@ int main()
 {
     InitWindow(800, 800, "Game");
     SetTargetFPS(60);
+
+    // Horizontal start at 25% of the screen width
+    float x = GetScreenWidth() * 0.25f;
+
+    // Vertical position of 50% of the screen height
+    float y = GetScreenHeight() * 0.5f;
+
     while (!WindowShouldClose())
     {
         BeginDrawing();
         ClearBackground(RAYWHITE);
-        DrawText("Hello World!", 10, 10, 20, GRAY);
+        DrawCircle(x, y, 25.0f, RED);
         EndDrawing();
     }
 
