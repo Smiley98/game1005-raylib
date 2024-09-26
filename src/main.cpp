@@ -15,13 +15,36 @@ int main()
     // Move at 100 pixels per second
     float speed = 100.0f;
 
+    bool useMouse = false;
+
     while (!WindowShouldClose())
     {
-        // Time from previous to current frame (AKA Unity's Time.deltaTime)
-        float dt = GetFrameTime();
+        // Toggle mouse input on/off when we press space
+        if (IsKeyPressed(KEY_SPACE))
+        {
+            useMouse = !useMouse;
 
-        // Convert from 100 pixels per frame to 100 pixels per second, then increment x-positon
-        x += speed * dt;
+            // Reset position if we switch back to time-based animation
+            if (!useMouse)
+            {
+                x = GetScreenWidth() * 0.25f;
+                y = GetScreenHeight() * 0.5f;
+            }
+        }
+
+        // Move using mouse position if we're moving based on mouse-input
+        if (useMouse)
+        {
+            Vector2 mouse = GetMousePosition();
+            x = mouse.x;
+            y = mouse.y;
+        }
+        else
+        {
+            // Move using time-based animation otherwise!
+            float dt = GetFrameTime();
+            x += speed * dt;
+        }
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
