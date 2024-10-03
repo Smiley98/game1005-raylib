@@ -1,6 +1,6 @@
 #include "raylib.h"
 #include "Math.h"
-
+bool gameOn = true;
 constexpr float SCREEN_WIDTH = 1200.0f;
 constexpr float SCREEN_HEIGHT = 800.0f;
 constexpr Vector2 CENTER{ SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f };
@@ -13,6 +13,25 @@ constexpr float BALL_SIZE = 40.0f;
 constexpr float PADDLE_SPEED = SCREEN_HEIGHT * 0.5f;
 constexpr float PADDLE_WIDTH = 40.0f;
 constexpr float PADDLE_HEIGHT = 80.0f;
+
+
+//dumbest way to do this but hear me out
+struct Player
+{
+    int score;
+    Color textCol;
+    const char* name;
+};
+
+void GameOver(Player winner) {
+
+    gameOn = false;
+    //just covers shit up so is probably disastrously bad
+    DrawText(TextFormat("Winner: %s", winner.name), (SCREEN_WIDTH * 0.5f) / 2, SCREEN_HEIGHT * 0.5f, 50, winner.textCol);
+
+}
+
+
 
 struct Box
 {
@@ -64,7 +83,7 @@ void ResetBall(Vector2& position, Vector2& direction)
     position = CENTER;
     direction.x = rand() % 2 == 0 ? -1.0f : 1.0f;
     direction.y = 0.0f;
-    direction = Rotate(direction, Random(0.0f, 360.0f) * DEG2RAD);
+    direction = Rotate(direction, Random(100.0f, 360.0f) * DEG2RAD);
 }
 
 void DrawBall(Vector2 position, Color color)
@@ -81,6 +100,21 @@ void DrawPaddle(Vector2 position, Color color)
 
 int main()
 {
+    Rectangle textBox = { SCREEN_WIDTH * 0.5f - 100, 180 , 225, 50 };
+    bool mouseOnText = false;
+
+    //player init?
+
+    Player player1;
+    Player player2;
+    player1.textCol = BLUE;
+    player2.textCol = RED;
+    player2.score = 0;
+    player1.score = 0;
+    player1.name = "PLAYER1";
+    player2.name = "PLAYER2";
+
+
     Vector2 ballPosition;
     Vector2 ballDirection;
     ResetBall(ballPosition, ballDirection);
@@ -94,18 +128,22 @@ int main()
     SetTargetFPS(60);
     while (!WindowShouldClose())
     {
+
         float dt = GetFrameTime();
         float ballDelta = BALL_SPEED * dt;
         float paddleDelta = PADDLE_SPEED * dt;
 
-        // Move paddle with key input
+        // Move paddle1 with WS key input
         if (IsKeyDown(KEY_W))
             paddle1Position.y -= paddleDelta;
         if (IsKeyDown(KEY_S))
             paddle1Position.y += paddleDelta;
 
-        // Mirror paddle 1 for now
-        paddle2Position.y = paddle1Position.y;
+        // Move paddle2 with I/K key input
+        if (IsKeyDown(KEY_I))
+            paddle2Position.y -= paddleDelta;
+        if (IsKeyDown(KEY_K))
+            paddle2Position.y += paddleDelta;
 
         float phh = PADDLE_HEIGHT * 0.5f;
         paddle1Position.y = Clamp(paddle1Position.y, phh, SCREEN_HEIGHT - phh);
@@ -117,8 +155,34 @@ int main()
         Box paddle1Box = PaddleBox(paddle1Position);
         Box paddle2Box = PaddleBox(paddle2Position);
 
-        if (ballBox.xMin < 0.0f || ballBox.xMax > SCREEN_WIDTH)
-            ballDirection.x *= -1.0f;
+        //handling scores
+        if (ballBox.xMin < -2.0f) {
+            player2.score += 1;
+            if (player2.score >= 5) {
+                GameOver(player2);
+                ClearBackground(BLACK);
+
+            }
+            else {
+                ballDirection.x *= -1.0f;
+                ResetBall(ballPosition, ballDirection);
+            }
+        }
+        else if (ballBox.xMax > SCREEN_WIDTH) {
+            player1.score += 1;
+            if (player1.score >= 5) {
+                GameOver(player1);
+                ClearBackground(BLACK);
+
+            }
+            else {
+                ballDirection.x *= -1.0f; //seems to give the behaviour i want but I think im deluding myself
+                //sometimes goes straight up and down?
+                ResetBall(ballPosition, ballDirection);
+            }
+        }
+
+
         if (ballBox.yMin < 0.0f || ballBox.yMax > SCREEN_HEIGHT)
             ballDirection.y *= -1.0f;
         if (BoxOverlap(ballBox, paddle1Box) || BoxOverlap(ballBox, paddle2Box))
@@ -127,12 +191,34 @@ int main()
         // Update ball position after collision resolution, then render
         ballPosition = ballPosition + ballDirection * ballDelta;
 
+
         BeginDrawing();
-        ClearBackground(BLACK);
-        DrawBall(ballPosition, WHITE);
-        DrawPaddle(paddle1Position, WHITE);
-        DrawPaddle(paddle2Position, WHITE);
+
+
+
+
+        //textytext stuff
+        if (gameOn) {
+            DrawText(player1.name, 250, 20, 50, player1.textCol);
+            DrawText(TextFormat("SCORE: %d", player1.score), 250, 90, 50, player1.textCol);
+            //%d is int placeholder
+            DrawText(player2.name, 650, 20, 50, player2.textCol);
+            DrawText(TextFormat("SCORE: %d", player2.score), 650, 90, 50, player2.textCol);
+            ClearBackground(BLACK);
+            DrawBall(ballPosition, WHITE);
+            DrawPaddle(paddle1Position, WHITE);
+            DrawPaddle(paddle2Position, WHITE);
+        }
+        else {
+            DrawText("NICE!", 250, 20, 50, YELLOW);
+        }
+
+
         EndDrawing();
+
+
+
+
     }
 
     CloseWindow();
