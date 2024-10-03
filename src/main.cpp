@@ -121,9 +121,10 @@ int main()
     //waypoints.push_back({ 19, 9 });
     
     // Automatic approach:
-    std::vector<Cell> waypoints = FloodFill({ 0, 13 }, tiles, GRASS);
+    std::vector<Cell> waypoints = FloodFill({ 0, 12 }, tiles, WAYPOINT);
 
-    // Task 1: Store a vector of dirt cells called path. Render all path cells in a colour of your choice!
+    // Using flood-fill, store all dirt tiles.
+    // Render all dirt tiles in a colour of your choice!
 
     InitWindow(800, 800, "Game");
     SetTargetFPS(60);
@@ -146,6 +147,7 @@ int main()
 
             DrawTile(waypoint.row, waypoint.col, RED);
         }
+        
         EndDrawing();
     }
 
