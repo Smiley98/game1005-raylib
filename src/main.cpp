@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include "Math.h"
 #include <cassert>
+#include <vector>
 
 constexpr int SCREEN_SIZE = 800;
 constexpr int TILE_SIZE = 40;
@@ -12,6 +13,12 @@ enum TileType : int
     DIRT,
     WAYPOINT,
     COUNT
+};
+
+struct Cell
+{
+    int row;
+    int col;
 };
 
 void DrawTile(int row, int col, Color color)
@@ -53,6 +60,16 @@ int main()
         { 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }  // 19
     };
 
+    std::vector<Cell> waypoints;
+    waypoints.push_back({ 0, 12 });
+    waypoints.push_back({ 7, 12 });
+    waypoints.push_back({ 7, 3 });
+    waypoints.push_back({ 13, 3 });
+    waypoints.push_back({ 13, 16 });
+    waypoints.push_back({ 17, 16 });
+    waypoints.push_back({ 17, 9 });
+    waypoints.push_back({ 19, 9 });
+
     InitWindow(800, 800, "Game");
     SetTargetFPS(60);
 
@@ -69,6 +86,11 @@ int main()
             }
         }
 
+        for (Cell waypoint : waypoints)
+        {
+
+            DrawTile(waypoint.row, waypoint.col, RED);
+        }
         EndDrawing();
     }
 
