@@ -119,11 +119,11 @@ int main()
     
     // Automatic approach:
     std::vector<Cell> waypoints = FloodFill({ 0, 12 }, tiles, WAYPOINT);
-    Vector2 A = TileCenter(waypoints[0]);
-    Vector2 B = TileCenter(waypoints[1]);
-    float speed = 250.0f;
-
-    Vector2 player = A;
+    int curr = 0;
+    int next = curr + 1;
+    Vector2 enemyPosition = TileCenter(waypoints[curr]);
+    float enemySpeed = 250.0f;
+    bool atEnd = false;
 
     InitWindow(800, 800, "Game");
     SetTargetFPS(60);
@@ -131,13 +131,20 @@ int main()
     while (!WindowShouldClose())
     {
         float dt = GetFrameTime();
-        Vector2 direction = Normalize(B - A);
-        player = player + direction * speed * dt;
+
+        Vector2 A = TileCenter(waypoints[curr]);
+        Vector2 B = TileCenter(waypoints[next]);
+        Vector2 enemyDirection = Normalize(B - A);
+        enemyPosition = enemyPosition + enemyDirection * enemySpeed * dt;
+        if (CheckCollisionPointCircle(B, enemyPosition, 10.0f))
+        {
+            // TODO -- Fix this (add an actual condition to check if the enemy has reached the end)
+            ++curr %= waypoints.size();
+            ++next %= waypoints.size();
+        }
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
-
-
 
         for (int row = 0; row < TILE_COUNT; row++)
         {
@@ -152,7 +159,7 @@ int main()
             DrawTile(waypoint.row, waypoint.col, RED);
         }
 
-        DrawCircleV(player, 25.0f, PURPLE);
+        DrawCircleV(enemyPosition, 25.0f, PURPLE);
         
         EndDrawing();
     }
