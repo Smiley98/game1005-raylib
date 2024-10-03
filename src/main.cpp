@@ -1,54 +1,44 @@
 #include "raylib.h"
 #include "Math.h"
 
+constexpr int SCREEN_SIZE = 800;
+constexpr int TILE_SIZE = 40;
+constexpr int TILE_COUNT = SCREEN_SIZE / TILE_SIZE;
+
 int main()
 {
+    int tiles[TILE_COUNT][TILE_COUNT]
+    {
+    //col:0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19    row:
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0 }, // 0
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 1
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 2
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 3
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 4
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 5
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 6
+        { 0, 0, 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 0, 0, 0, 0, 0, 0 }, // 7
+        { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 8
+        { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 9
+        { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 10
+        { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 11
+        { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 12
+        { 0, 0, 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 0, 0 }, // 13
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 }, // 14
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 }, // 15
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 }, // 16
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 1, 1, 1, 1, 2, 0, 0, 0 }, // 17
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 18
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }  // 19
+    };
+
     InitWindow(800, 800, "Game");
     SetTargetFPS(60);
 
-    // Position of our circle
-    Vector2 position;
-    position.x = GetScreenWidth() * 0.25f;
-    position.y = GetScreenHeight() * 0.5f;
-
-    // Move at 100 pixels per second
-    float speed = 100.0f;
-
-    // Time-based movement if false, mouse-based movement if true
-    bool useMouse = false;
-
     while (!WindowShouldClose())
     {
-        // Toggle mouse input on/off when we press space
-        if (IsKeyPressed(KEY_SPACE))
-        {
-            useMouse = !useMouse;
-
-            // Reset position if we switch back to time-based animation
-            if (!useMouse)
-            {
-                position.x = GetScreenWidth() * 0.25f;
-                position.y = GetScreenHeight() * 0.5f;
-            }
-        }
-
-        // Move using mouse position if we're moving based on mouse-input
-        if (useMouse)
-        {
-            position = GetMousePosition();
-        }
-        else
-        {
-            // Move using time-based animation otherwise!
-            float dt = GetFrameTime();
-            position.x += speed * dt;
-        }
-
-        // Optional homework: use vector math to move the circle in different directions!
-        // The Normalize and Rotate functions may be of use!!
         BeginDrawing();
         ClearBackground(RAYWHITE);
-        DrawCircleV(position, 25.0f, RED);
         EndDrawing();
     }
 
