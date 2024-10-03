@@ -53,7 +53,7 @@ std::vector<Cell> FloodFill(Cell start, int tiles[TILE_COUNT][TILE_COUNT], TileT
         for (int col = 0; col < TILE_COUNT; col++)
         {
             // We don't want to search zero-tiles, so add them to closed!
-            closed[row][col] = tiles[row][col] == 0;
+            closed[row][col] = tiles[row][col] > 0;
         }
     }
 
@@ -74,7 +74,9 @@ std::vector<Cell> FloodFill(Cell start, int tiles[TILE_COUNT][TILE_COUNT], TileT
         for (Cell dir : DIRECTIONS)
         {
             Cell adj = { cell.row + dir.row, cell.col + dir.col };
-            if (InBounds(adj) && !closed[adj.row][adj.col] && tiles[adj.row][adj.col] > 0)
+            if (InBounds(adj) &&
+                !closed[adj.row][adj.col]
+                /*tiles[adj.row][adj.col] > 0*/)
                 open.push_back(adj);
         }
     }
@@ -125,6 +127,10 @@ int main()
 
     // Using flood-fill, store all dirt tiles.
     // Render all dirt tiles in a colour of your choice!
+    std::vector<Cell> dirt = FloodFill({ 0, 12 }, tiles, DIRT);
+
+    std::vector<Cell> grass1 = FloodFill({ 0, 19 }, tiles, GRASS);
+    std::vector<Cell> grass2 = FloodFill({ 0, 0 }, tiles, GRASS);
 
     InitWindow(800, 800, "Game");
     SetTargetFPS(60);
@@ -134,20 +140,35 @@ int main()
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        for (int row = 0; row < TILE_COUNT; row++)
-        {
-            for (int col = 0; col < TILE_COUNT; col++)
-            {
-                DrawTile(row, col, tiles[row][col]);
-            }
-        }
+        //for (int row = 0; row < TILE_COUNT; row++)
+        //{
+        //    for (int col = 0; col < TILE_COUNT; col++)
+        //    {
+        //        DrawTile(row, col, tiles[row][col]);
+        //    }
+        //}
+        //
+        //for (Cell waypoint : waypoints)
+        //{
+        //
+        //    DrawTile(waypoint.row, waypoint.col, RED);
+        //}
+        //
+        //for (Cell d : dirt)
+        //{
+        //    DrawTile(d.row, d.col, ORANGE);
+        //}
 
-        for (Cell waypoint : waypoints)
+        for (Cell g : grass1)
         {
-
-            DrawTile(waypoint.row, waypoint.col, RED);
-        }
         
+            DrawTile(g.row, g.col, RED);
+        }
+        for (Cell g : grass2)
+        {
+
+            DrawTile(g.row, g.col, RED);
+        }
         EndDrawing();
     }
 
