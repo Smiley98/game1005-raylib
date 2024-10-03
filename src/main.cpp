@@ -138,9 +138,10 @@ int main()
         enemyPosition = enemyPosition + enemyDirection * enemySpeed * dt;
         if (CheckCollisionPointCircle(B, enemyPosition, 10.0f))
         {
-            // TODO -- Fix this (add an actual condition to check if the enemy has reached the end)
+            enemyPosition = B;
             ++curr %= waypoints.size();
             ++next %= waypoints.size();
+            // TODO -- Fix this (add an actual condition to check if the enemy has reached the end)
         }
 
         BeginDrawing();
