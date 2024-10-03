@@ -90,6 +90,8 @@ int main()
     paddle2Position.x = SCREEN_WIDTH * 0.95f;
     paddle1Position.y = paddle2Position.y = CENTER.y;
 
+    int testScore = 0;
+
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Pong");
     SetTargetFPS(60);
     while (!WindowShouldClose())
@@ -117,12 +119,20 @@ int main()
         Box paddle1Box = PaddleBox(paddle1Position);
         Box paddle2Box = PaddleBox(paddle2Position);
 
+        // TODO -- increment the scoring player's score after they've touched the ball and the ball goes too far right/left
+        testScore++;
         if (ballBox.xMin < 0.0f || ballBox.xMax > SCREEN_WIDTH)
+        {
             ballDirection.x *= -1.0f;
+        }
         if (ballBox.yMin < 0.0f || ballBox.yMax > SCREEN_HEIGHT)
+        {
             ballDirection.y *= -1.0f;
+        }
         if (BoxOverlap(ballBox, paddle1Box) || BoxOverlap(ballBox, paddle2Box))
+        {
             ballDirection.x *= -1.0f;
+        }
 
         // Update ball position after collision resolution, then render
         ballPosition = ballPosition + ballDirection * ballDelta;
@@ -132,6 +142,12 @@ int main()
         DrawBall(ballPosition, WHITE);
         DrawPaddle(paddle1Position, WHITE);
         DrawPaddle(paddle2Position, WHITE);
+
+        // Text format requires you to put a '%i' wherever you want an integer, then add said integer after the comma
+        const char* testScoreText = TextFormat("Test Score: %i ", testScore);
+        
+        // We can measure our text for more exact positioning. This puts our score in the center of our screen!
+        DrawText(testScoreText, SCREEN_WIDTH * 0.5f - MeasureText(testScoreText, 20) * 0.5f, 50, 20, BLUE);
         EndDrawing();
     }
 
