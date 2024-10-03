@@ -22,6 +22,12 @@ struct Cell
     int col;
 };
 
+Vector2 TileCenter(Cell cell)
+{
+    Vector2 pixel{ cell.col * TILE_SIZE + TILE_SIZE * 0.5f, cell.row * TILE_SIZE + TILE_SIZE * 0.5f };
+    return pixel;
+}
+
 constexpr std::array<Cell, 4> DIRECTIONS{ Cell{ -1, 0 }, Cell{ 1, 0 }, Cell{ 0, -1 }, Cell{ 0, 1 } };
 
 inline bool InBounds(Cell cell, int rows = TILE_COUNT, int cols = TILE_COUNT)
@@ -53,7 +59,7 @@ std::vector<Cell> FloodFill(Cell start, int tiles[TILE_COUNT][TILE_COUNT], TileT
         for (int col = 0; col < TILE_COUNT; col++)
         {
             // We don't want to search zero-tiles, so add them to closed!
-            closed[row][col] = tiles[row][col] > 0;
+            closed[row][col] = tiles[row][col] == 0;
         }
     }
 
@@ -75,8 +81,8 @@ std::vector<Cell> FloodFill(Cell start, int tiles[TILE_COUNT][TILE_COUNT], TileT
         {
             Cell adj = { cell.row + dir.row, cell.col + dir.col };
             if (InBounds(adj) &&
-                !closed[adj.row][adj.col]
-                /*tiles[adj.row][adj.col] > 0*/)
+                !closed[adj.row][adj.col] &&
+                tiles[adj.row][adj.col] > 0)
                 open.push_back(adj);
         }
     }
@@ -110,65 +116,44 @@ int main()
         { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 18
         { 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }  // 19
     };
-
-    // Manual approach:
-    //std::vector<Cell> waypoints;
-    //waypoints.push_back({ 0, 12 });
-    //waypoints.push_back({ 7, 12 });
-    //waypoints.push_back({ 7, 3 });
-    //waypoints.push_back({ 13, 3 });
-    //waypoints.push_back({ 13, 16 });
-    //waypoints.push_back({ 17, 16 });
-    //waypoints.push_back({ 17, 9 });
-    //waypoints.push_back({ 19, 9 });
     
     // Automatic approach:
     std::vector<Cell> waypoints = FloodFill({ 0, 12 }, tiles, WAYPOINT);
+    Vector2 A = TileCenter(waypoints[0]);
+    Vector2 B = TileCenter(waypoints[1]);
+    float speed = 250.0f;
 
-    // Using flood-fill, store all dirt tiles.
-    // Render all dirt tiles in a colour of your choice!
-    std::vector<Cell> dirt = FloodFill({ 0, 12 }, tiles, DIRT);
-
-    std::vector<Cell> grass1 = FloodFill({ 0, 19 }, tiles, GRASS);
-    std::vector<Cell> grass2 = FloodFill({ 0, 0 }, tiles, GRASS);
+    Vector2 player = A;
 
     InitWindow(800, 800, "Game");
     SetTargetFPS(60);
 
     while (!WindowShouldClose())
     {
+        float dt = GetFrameTime();
+        Vector2 direction = Normalize(B - A);
+        player = player + direction * speed * dt;
+
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        //for (int row = 0; row < TILE_COUNT; row++)
-        //{
-        //    for (int col = 0; col < TILE_COUNT; col++)
-        //    {
-        //        DrawTile(row, col, tiles[row][col]);
-        //    }
-        //}
-        //
-        //for (Cell waypoint : waypoints)
-        //{
-        //
-        //    DrawTile(waypoint.row, waypoint.col, RED);
-        //}
-        //
-        //for (Cell d : dirt)
-        //{
-        //    DrawTile(d.row, d.col, ORANGE);
-        //}
 
-        for (Cell g : grass1)
+
+        for (int row = 0; row < TILE_COUNT; row++)
         {
+            for (int col = 0; col < TILE_COUNT; col++)
+            {
+                DrawTile(row, col, tiles[row][col]);
+            }
+        }
+
+        for (Cell waypoint : waypoints)
+        {
+            DrawTile(waypoint.row, waypoint.col, RED);
+        }
+
+        DrawCircleV(player, 25.0f, PURPLE);
         
-            DrawTile(g.row, g.col, RED);
-        }
-        for (Cell g : grass2)
-        {
-
-            DrawTile(g.row, g.col, RED);
-        }
         EndDrawing();
     }
 
