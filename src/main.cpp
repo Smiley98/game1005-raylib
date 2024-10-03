@@ -1,9 +1,30 @@
 #include "raylib.h"
 #include "Math.h"
+#include <cassert>
 
 constexpr int SCREEN_SIZE = 800;
 constexpr int TILE_SIZE = 40;
 constexpr int TILE_COUNT = SCREEN_SIZE / TILE_SIZE;
+
+enum TileType : int
+{
+    GRASS,
+    DIRT,
+    WAYPOINT,
+    COUNT
+};
+
+void DrawTile(int row, int col, Color color)
+{
+    DrawRectangle(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE, color);
+}
+
+void DrawTile(int row, int col, int tileType)
+{
+    assert(tileType >= 0 && tileType < COUNT);
+    Color colours[COUNT]{ LIME, BEIGE, SKYBLUE };
+    DrawTile(row, col, colours[tileType]);
+}
 
 int main()
 {
@@ -39,6 +60,15 @@ int main()
     {
         BeginDrawing();
         ClearBackground(RAYWHITE);
+
+        for (int row = 0; row < TILE_COUNT; row++)
+        {
+            for (int col = 0; col < TILE_COUNT; col++)
+            {
+                DrawTile(row, col, tiles[row][col]);
+            }
+        }
+
         EndDrawing();
     }
 
