@@ -91,11 +91,15 @@ int main()
     paddle1Position.y = paddle2Position.y = CENTER.y;
 
     int testScore = 0;
+    int score = 0;
 
+    bool gameOver = false;
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Pong");
     SetTargetFPS(60);
     while (!WindowShouldClose())
     {
+        gameOver = score >= 2;
+
         float dt = GetFrameTime();
         float ballDelta = BALL_SPEED * dt;
         float paddleDelta = PADDLE_SPEED * dt;
@@ -124,10 +128,12 @@ int main()
         if (ballBox.xMin < 0.0f || ballBox.xMax > SCREEN_WIDTH)
         {
             ballDirection.x *= -1.0f;
+            score++;
         }
         if (ballBox.yMin < 0.0f || ballBox.yMax > SCREEN_HEIGHT)
         {
             ballDirection.y *= -1.0f;
+            score++;
         }
         if (BoxOverlap(ballBox, paddle1Box) || BoxOverlap(ballBox, paddle2Box))
         {
@@ -138,16 +144,25 @@ int main()
         ballPosition = ballPosition + ballDirection * ballDelta;
 
         BeginDrawing();
-        ClearBackground(BLACK);
-        DrawBall(ballPosition, WHITE);
-        DrawPaddle(paddle1Position, WHITE);
-        DrawPaddle(paddle2Position, WHITE);
+        if (gameOver)
+        {
+            ClearBackground(RED);
+            DrawText("You lost :(", 10, 10, 20, BLACK);
+        }
+        else
+        {
+            ClearBackground(BLACK);
+            DrawBall(ballPosition, WHITE);
+            DrawPaddle(paddle1Position, WHITE);
+            DrawPaddle(paddle2Position, WHITE);
 
-        // Text format requires you to put a '%i' wherever you want an integer, then add said integer after the comma
-        const char* testScoreText = TextFormat("Test Score: %i ", testScore);
+            // Text format requires you to put a '%i' wherever you want an integer, then add said integer after the comma
+            const char* testScoreText = TextFormat("Test Score: %i ", testScore);
+
+            // We can measure our text for more exact positioning. This puts our score in the center of our screen!
+            DrawText(testScoreText, SCREEN_WIDTH * 0.5f - MeasureText(testScoreText, 20) * 0.5f, 50, 20, BLUE);
+        }
         
-        // We can measure our text for more exact positioning. This puts our score in the center of our screen!
-        DrawText(testScoreText, SCREEN_WIDTH * 0.5f - MeasureText(testScoreText, 20) * 0.5f, 50, 20, BLUE);
         EndDrawing();
     }
 
