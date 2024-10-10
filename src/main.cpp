@@ -178,17 +178,12 @@ int main()
         }
 
         // Bullet update
-        int bulletsVisible = 0;
-        int bulletsTotal = 0;
         for (int i = 0; i < bullets.size(); i++)
         {
-            bulletsTotal++;
             Bullet& bullet = bullets[i];
-            if (!bullet.enabled) continue;
-
-            bulletsVisible++;
-            bullet.time += dt;
             bullet.position = bullet.position + bullet.direction * bulletSpeed * dt;
+            bullet.time += dt;
+
             bool collision = CheckCollisionCircles(bullet.position, BULLET_RADIUS, enemyPosition, ENEMY_RADIUS);
             bool expired = bullet.time >= 1.0f;
             bullet.enabled = !collision && !expired;
@@ -214,11 +209,8 @@ int main()
         DrawCircleV(enemyPosition, 25.0f, PURPLE);
         for (int i = 0; i < bullets.size(); i++)
         {
-            if (bullets[i].enabled)
-                DrawCircleV(bullets[i].position, 15.0f, RED);
+            DrawCircleV(bullets[i].position, 15.0f, RED);
         }
-        DrawText(TextFormat("Bullets visible: %i", bulletsVisible), 10, 10, 20, BLUE);
-        DrawText(TextFormat("Bullets total: %i", bulletsTotal), 10, 40, 20, DARKBLUE);
         EndDrawing();
     }
 
