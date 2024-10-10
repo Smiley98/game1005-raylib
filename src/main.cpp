@@ -24,7 +24,8 @@ struct Cell
 
 Vector2 TileCenter(Cell cell)
 {
-    Vector2 pixel{ cell.col * TILE_SIZE + TILE_SIZE * 0.5f, cell.row * TILE_SIZE + TILE_SIZE * 0.5f };
+    Vector2 pixel{ cell.col * TILE_SIZE, cell.row * TILE_SIZE };    // Top-left
+    pixel = pixel + TILE_SIZE * 0.5f;   // Center
     return pixel;
 }
 
@@ -146,7 +147,6 @@ int main()
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
-
         for (int row = 0; row < TILE_COUNT; row++)
         {
             for (int col = 0; col < TILE_COUNT; col++)
@@ -154,14 +154,12 @@ int main()
                 DrawTile(row, col, tiles[row][col]);
             }
         }
-
-        for (Cell waypoint : waypoints)
-        {
-            DrawTile(waypoint.row, waypoint.col, RED);
-        }
-
+        // Flood-fill test
+        //for (Cell waypoint : waypoints)
+        //{
+        //    DrawTile(waypoint.row, waypoint.col, RED);
+        //}
         DrawCircleV(enemyPosition, 25.0f, PURPLE);
-        
         EndDrawing();
     }
 
