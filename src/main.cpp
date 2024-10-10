@@ -134,9 +134,10 @@ int main()
     float enemySpeed = 250.0f;
     bool atEnd = false;
 
-    Bullet bullet;
-    bullet.enabled = false;
+    std::vector<Bullet> bullets;
     float bulletSpeed = 500.0f;
+    float shootCurrent = 0.0f;
+    float shootTotal = 0.25f;
 
     InitWindow(800, 800, "Game");
     SetTargetFPS(60);
@@ -145,11 +146,19 @@ int main()
     {
         float dt = GetFrameTime();
         Vector2 mouse = GetMousePosition();
-        if (IsKeyPressed(KEY_SPACE))
+        if (IsKeyDown(KEY_SPACE))
         {
-            bullet.enabled = !bullet.enabled;
-            if (bullet.enabled)
+            // Shoot a bullet every 0.25 seconds if we're holding space
+            shootCurrent += dt;
+            if (shootCurrent > shootTotal)
+            {
+                shootCurrent = 0.0f;
+
+                Bullet bullet;
+                bullet.position = mouse;
                 bullet.direction = Normalize(enemyPosition - bullet.position);
+                bullets.push_back(bullet);
+            }
         }
 
         Vector2 A = TileCenter(waypoints[curr]);
@@ -165,10 +174,12 @@ int main()
         }
 
         // Bullet update
-        if (bullet.enabled)
-            bullet.position = bullet.position + bullet.direction * bulletSpeed * dt;
-        else
-            bullet.position = mouse;
+        for (int i = 0; i < bullets.size(); i++)
+        {
+            Bullet& bullet = bullets[i];
+            //if (bullet.enabled)
+                bullet.position = bullet.position + bullet.direction * bulletSpeed * dt;
+        }
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
@@ -180,7 +191,8 @@ int main()
             }
         }
         DrawCircleV(enemyPosition, 25.0f, PURPLE);
-        DrawCircleV(bullet.position, 15.0f, bullet.enabled ? RED : ORANGE);
+        for (int i = 0; i < bullets.size(); i++)
+            DrawCircleV(bullets[i].position, 15.0f, bullets[i].enabled ? RED : ORANGE);
         EndDrawing();
     }
 
