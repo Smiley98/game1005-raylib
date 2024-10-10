@@ -3,6 +3,7 @@
 #include <cassert>
 #include <array>
 #include <vector>
+#include <algorithm>
 
 constexpr int SCREEN_SIZE = 800;
 constexpr int TILE_SIZE = 40;
@@ -189,9 +190,17 @@ int main()
             bullet.time += dt;
             bullet.position = bullet.position + bullet.direction * bulletSpeed * dt;
             bool collision = CheckCollisionCircles(bullet.position, BULLET_RADIUS, enemyPosition, ENEMY_RADIUS);
-            bool expired = bullet.time >= 0.5f;
+            bool expired = bullet.time >= 1.0f;
             bullet.enabled = !collision && !expired;
         }
+
+        bullets.erase(
+            std::remove_if(bullets.begin(), bullets.end(), [&](Bullet& bullet)
+            {
+                    // Return true if you WANT the element (bullet) to be erased!
+                    return !bullet.enabled;
+            }), 
+        bullets.end());
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
