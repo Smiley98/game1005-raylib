@@ -8,6 +8,9 @@ constexpr int SCREEN_SIZE = 800;
 constexpr int TILE_SIZE = 40;
 constexpr int TILE_COUNT = SCREEN_SIZE / TILE_SIZE;
 
+constexpr float BULLET_RADIUS = 15.0f;
+constexpr float ENEMY_RADIUS = 25.0f;
+
 enum TileType : int
 {
     GRASS,
@@ -177,8 +180,13 @@ int main()
         for (int i = 0; i < bullets.size(); i++)
         {
             Bullet& bullet = bullets[i];
-            //if (bullet.enabled)
-                bullet.position = bullet.position + bullet.direction * bulletSpeed * dt;
+            if (!bullet.enabled) continue;
+
+            bullet.time += dt;
+            bullet.position = bullet.position + bullet.direction * bulletSpeed * dt;
+            bool collision = CheckCollisionCircles(bullet.position, BULLET_RADIUS, enemyPosition, ENEMY_RADIUS);
+            bool expired = bullet.time >= 0.5f;
+            bullet.enabled = !collision && !expired;
         }
 
         BeginDrawing();
@@ -192,7 +200,10 @@ int main()
         }
         DrawCircleV(enemyPosition, 25.0f, PURPLE);
         for (int i = 0; i < bullets.size(); i++)
-            DrawCircleV(bullets[i].position, 15.0f, bullets[i].enabled ? RED : ORANGE);
+        {
+            if (bullets[i].enabled)
+                DrawCircleV(bullets[i].position, 15.0f, RED);
+        }
         EndDrawing();
     }
 
