@@ -91,6 +91,14 @@ std::vector<Cell> FloodFill(Cell start, int tiles[TILE_COUNT][TILE_COUNT], TileT
     return result;
 }
 
+struct Bullet
+{
+    Vector2 position{};
+    Vector2 direction{};
+    float time = 0.0f;
+    bool enabled = true;
+};
+
 int main()
 {
     int tiles[TILE_COUNT][TILE_COUNT]
@@ -126,12 +134,18 @@ int main()
     float enemySpeed = 250.0f;
     bool atEnd = false;
 
+    Bullet bullet;
+    bool fired = false;
+
     InitWindow(800, 800, "Game");
     SetTargetFPS(60);
 
     while (!WindowShouldClose())
     {
         float dt = GetFrameTime();
+        Vector2 mouse = GetMousePosition();
+        if (IsKeyPressed(KEY_SPACE))
+            fired = !fired;
 
         Vector2 A = TileCenter(waypoints[curr]);
         Vector2 B = TileCenter(waypoints[next]);
@@ -145,6 +159,17 @@ int main()
             // TODO -- Fix this (add an actual condition to check if the enemy has reached the end)
         }
 
+        // Move bullet towards enemy
+        if (fired)
+        {
+            // *insert physics here*
+        }
+        // Otherwise, keep bullet at mouse cursor
+        else
+        {
+            bullet.position = mouse;
+        }
+
         BeginDrawing();
         ClearBackground(RAYWHITE);
         for (int row = 0; row < TILE_COUNT; row++)
@@ -154,12 +179,8 @@ int main()
                 DrawTile(row, col, tiles[row][col]);
             }
         }
-        // Flood-fill test
-        //for (Cell waypoint : waypoints)
-        //{
-        //    DrawTile(waypoint.row, waypoint.col, RED);
-        //}
         DrawCircleV(enemyPosition, 25.0f, PURPLE);
+        DrawCircleV(bullet.position, 15.0f, ORANGE);
         EndDrawing();
     }
 
