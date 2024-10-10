@@ -135,7 +135,8 @@ int main()
     bool atEnd = false;
 
     Bullet bullet;
-    bool fired = false;
+    bullet.enabled = false;
+    float bulletSpeed = 500.0f;
 
     InitWindow(800, 800, "Game");
     SetTargetFPS(60);
@@ -145,7 +146,11 @@ int main()
         float dt = GetFrameTime();
         Vector2 mouse = GetMousePosition();
         if (IsKeyPressed(KEY_SPACE))
-            fired = !fired;
+        {
+            bullet.enabled = !bullet.enabled;
+            if (bullet.enabled)
+                bullet.direction = Normalize(enemyPosition - bullet.position);
+        }
 
         Vector2 A = TileCenter(waypoints[curr]);
         Vector2 B = TileCenter(waypoints[next]);
@@ -159,16 +164,11 @@ int main()
             // TODO -- Fix this (add an actual condition to check if the enemy has reached the end)
         }
 
-        // Move bullet towards enemy
-        if (fired)
-        {
-            // *insert physics here*
-        }
-        // Otherwise, keep bullet at mouse cursor
+        // Bullet update
+        if (bullet.enabled)
+            bullet.position = bullet.position + bullet.direction * bulletSpeed * dt;
         else
-        {
             bullet.position = mouse;
-        }
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
@@ -180,7 +180,7 @@ int main()
             }
         }
         DrawCircleV(enemyPosition, 25.0f, PURPLE);
-        DrawCircleV(bullet.position, 15.0f, ORANGE);
+        DrawCircleV(bullet.position, 15.0f, bullet.enabled ? RED : ORANGE);
         EndDrawing();
     }
 
